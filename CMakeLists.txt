@@ -11,11 +11,20 @@ endif()
 
 project ("Ectoplasme")
 
+# Add external header
+
+set(GLM_DIR dependencies/glm)
+include_directories(${GLM_DIR} ..)
+
 # Add source to this project's executable.
 add_executable (Ectoplasme "Ectoplasme.cpp" "Ectoplasme.h")
+
+# Add external source that have there own CmakeLists
+
+add_subdirectory(dependencies/glfw)
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Ectoplasme PROPERTY CXX_STANDARD 20)
 endif()
 
-# TODO: Add tests and install targets if needed.
