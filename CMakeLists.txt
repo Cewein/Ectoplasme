@@ -15,7 +15,7 @@ project ("Ectoplasme")
 message(STATUS "Using module to find Vulkan")
 
 # Find Vulkan Path using CMake's Vulkan Module
-find_package(Vulkan)
+find_package(Vulkan REQUIRED)
 
 IF (NOT Vulkan_FOUND)
 	message(FATAL_ERROR "Could not find Vulkan library!")
@@ -30,11 +30,14 @@ include_directories(${GLM_DIR} ..)
 
 
 # Add source to this project's executable.
-add_executable (Ectoplasme "Ectoplasme.cpp" "Ectoplasme.h")
+add_executable (Ectoplasme "Ectoplasme.cpp" )
 
 
 # Add external source that have there own CmakeLists
 add_subdirectory(dependencies/glfw)
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
+
+# Include Vulkan as a targeted lib
+target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan)
 
 
