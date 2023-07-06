@@ -15,22 +15,31 @@ int main()
 	glfwInit();
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Ectoplasme", nullptr, nullptr);
 
-	uint32_t extensionCount = 0;
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+	//define the window
+	int width = 800;
+	int height = 600;
+	GLFWwindow* window = glfwCreateWindow(width, height, "Ectoplasme", nullptr, nullptr);
 
-	std::cout << extensionCount << " extensions supported\n" << std::endl;
+	//create vulkan instant to use the api
+	VkInstance vkInstance;
+	VkApplicationInfo appInfo{};
 
-	glm::mat4 matrix;
-	glm::vec4 vec;
-	glm::vec4 result = matrix * vec;
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = "Ectoplasme";
+	appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 0, 1, 0);
+	appInfo.pEngineName = "ShinyCore";
+	appInfo.engineVersion = VK_MAKE_API_VERSION(0, 0, 1, 0);
+	appInfo.apiVersion = VK_API_VERSION_1_0;
 
+
+	//main loop like in opengl
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
 	}
-
+	
+	// clean up
 	glfwDestroyWindow(window);
 	glfwTerminate();
 
