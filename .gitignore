@@ -2,6 +2,7 @@
 *.d
 .vs
 out/
+build/
 
 # Compiled Object files
 *.slo
