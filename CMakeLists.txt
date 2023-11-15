@@ -15,9 +15,12 @@ project ("Ectoplasme")
 set(GLM_DIR dependencies/glm)
 include_directories(${GLM_DIR} ..)
 
-
 # Add source to this project's executable.
 add_executable (Ectoplasme "Ectoplasme.cpp" )
+
+#include OpenGL for prototyping
+add_subdirectory(dependencies/opengl)
+target_link_libraries(${PROJECT_NAME} PUBLIC glad)
 
 # Add external source that have there own CmakeLists
 add_subdirectory(dependencies/glfw)
