@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <GLFW/glfw3.h>
+#include <webgpu/webgpu.h>
 
 int main()
 {
@@ -16,13 +17,29 @@ int main()
 	int height = 600;
 	GLFWwindow *window = glfwCreateWindow(width, height, "Ectoplasme", nullptr, nullptr);
 
-	//safety check to see if the window is open
+	// safety check to see if the window is open
 	if (!window)
 	{
 		std::cerr << "Could not open window!" << std::endl;
 		glfwTerminate();
 		return 1;
 	}
+
+	// createing of the wGPU descriptor
+	WGPUInstanceDescriptor descriptor = {};
+	descriptor.nextInChain = nullptr;
+
+	// we create a instance of the wGPU desc
+	WGPUInstance instance = wgpuCreateInstance(&descriptor);
+
+	//safety check to see if the creation of the wGPU instance is sucessfull
+	if(!instance)
+	{
+		std::cout << "Could not instanciate wGPU" << std::endl;
+		return 1;
+	}
+	
+	std::cout << "WGPU instance: " << instance << std::endl;
 
 	// main loop like in opengl
 	while (!glfwWindowShouldClose(window))
@@ -31,6 +48,10 @@ int main()
 	}
 
 	// clean up
+	// wGPU
+	wgpuInstanceRelease(instance);
+
+	// GLFW
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
