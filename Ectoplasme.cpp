@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu.h>
+#include <glfw3webgpu.h>
 #include <cassert>
 
 WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options)
@@ -51,6 +52,8 @@ int main()
 		return 1;
 	}
 
+	//get the surface for glfw and webgpu 
+
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	// define the window
 	int width = 800;
@@ -81,10 +84,16 @@ int main()
 	
 	std::cout << "WGPU instance: " << instance << std::endl;
 
+	WGPUSurface surface = glfwGetWGPUSurface(instance, window);
+
 	//getting the webGPU adapter
 	std::cout << "Requesting adapter ! "  << std::endl;
 
 	WGPURequestAdapterOptions adapterOptions = {};
+	adapterOptions.nextInChain = nullptr;
+	adapterOptions.compatibleSurface = surface;
+
+
 	WGPUAdapter adapter = requestAdapter(instance, &adapterOptions);
 
 	std::cout << "Got adapter: " << adapter << std::endl;
@@ -97,6 +106,7 @@ int main()
 
 	// clean up
 	// wGPU
+	wgpuSurfaceRelease(surface);
 	wgpuAdapterRelease(adapter);
 	wgpuInstanceRelease(instance);
 

@@ -61,8 +61,36 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# GLFW does not support yet webGPU, thus custom lib
+#to change in case of official glfw support of webGPU
+FetchContent_Declare(
+  glfw3webgpu
+  GIT_REPOSITORY https://github.com/eliemichel/glfw3webgpu
+  GIT_TAG main
+)
+
+FetchContent_GetProperties(glfw3webgpu)
+if(NOT glfw3webgpu_POPULATED)
+  FetchContent_Populate(glfw3webgpu)
+
+  # Add the library
+  add_library(glfw3webgpu STATIC ${glfw3webgpu_SOURCE_DIR}/glfw3webgpu.c)
+
+  # Set include directories
+  target_include_directories(glfw3webgpu PUBLIC ${glfw3webgpu_SOURCE_DIR})
+
+  # Link libraries
+  target_link_libraries(glfw3webgpu PUBLIC glfw webgpu)
+
+  if (APPLE)
+    target_compile_options(glfw3webgpu PRIVATE -x objective-c)
+    target_link_libraries(glfw3webgpu PRIVATE "-framework Cocoa" "-framework CoreVideo" "-framework IOKit" "-framework QuartzCore")
+  endif ()
+endif ()
+
+
 # Link libraries
-target_link_libraries(Ectoplasme PRIVATE glfw webgpu)
+target_link_libraries(Ectoplasme PRIVATE glfw webgpu glfw3webgpu)
 
 #copy pre-computed files
 target_copy_webgpu_binaries(Ectoplasme)
