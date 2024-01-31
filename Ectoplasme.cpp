@@ -3,6 +3,7 @@
 #include <webgpu/webgpu.h>
 #include <glfw3webgpu.h>
 #include <cassert>
+#include <vector>
 
 WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options)
 {
@@ -97,6 +98,18 @@ int main()
 	WGPUAdapter adapter = requestAdapter(instance, &adapterOptions);
 
 	std::cout << "Got adapter: " << adapter << std::endl;
+
+	std::vector<WGPUFeatureName> features;
+
+	unsigned int featuresCount = wgpuAdapterEnumerateFeatures(adapter, nullptr);
+
+	features.resize(featuresCount);
+	wgpuAdapterEnumerateFeatures(adapter,features.data());
+
+	for(unsigned int i = 0; i < featuresCount; i++)
+	{
+		std::cout <<"\t[" << i << "] " << features[i] << std::endl;
+	}
 
 	// main loop like in opengl
 	while (!glfwWindowShouldClose(window))
