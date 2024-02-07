@@ -1,48 +1,12 @@
 ﻿#include <iostream>
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu.h>
+#include "src/wgpuhelper.h"
 #include <glfw3webgpu.h>
 #include <cassert>
 #include <vector>
 
-WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options)
-{
-	struct UserData
-	{
-		WGPUAdapter adapter = nullptr;
-		bool requestEnded = false;
-	};
-
-	UserData userData;
-
-	//the next function is a lambda function.
-	//it can be replace a a normal C function outside of the scope of this function
-	auto onAdapterRequestEnded = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * pUserData)
-	{
-		UserData& userData = *reinterpret_cast<UserData*>(pUserData);
-		if(status == WGPURequestAdapterStatus_Success)
-		{
-			userData.adapter = adapter;
-		}
-		else
-		{
-			std::cout << "Could not get webGPU adapter: " << message << std::endl;
-		}
-		userData.requestEnded = true;
-	};
-
-	wgpuInstanceRequestAdapter(
-		instance,
-		options,
-		onAdapterRequestEnded,
-		(void*)&userData
-	);
-
-	assert(userData.requestEnded);
-
-	return userData.adapter;
-
-}
+using namespace ectoplasme;
 
 int main()
 {
@@ -101,12 +65,12 @@ int main()
 
 	std::vector<WGPUFeatureName> features;
 
-	unsigned int featuresCount = wgpuAdapterEnumerateFeatures(adapter, nullptr);
+	size_t featuresCount = wgpuAdapterEnumerateFeatures(adapter, nullptr);
 
 	features.resize(featuresCount);
 	wgpuAdapterEnumerateFeatures(adapter,features.data());
 
-	for(unsigned int i = 0; i < featuresCount; i++)
+	for(size_t i = 0; i < featuresCount; i++)
 	{
 		std::cout <<"\t[" << i << "] " << features[i] << std::endl;
 	}

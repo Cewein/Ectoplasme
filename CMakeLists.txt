@@ -13,7 +13,7 @@ if(POLICY CMP0141)
 endif()
 
 # Set source files for the executable.
-add_executable(Ectoplasme "Ectoplasme.cpp")
+add_executable(Ectoplasme "Ectoplasme.cpp" "src/wgpuhelper.cpp" "src/wgpuhelper.h")
 
 set_target_properties(Ectoplasme PROPERTIES
   CXX_STANDARD 17
