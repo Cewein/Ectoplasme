@@ -52,7 +52,7 @@ int main()
 	WGPUSurface surface = glfwGetWGPUSurface(instance, window);
 
 	//getting the webGPU adapter
-	std::cout << "Requesting adapter ! "  << std::endl;
+	std::cout << "Requesting adapter"  << std::endl;
 
 	WGPURequestAdapterOptions adapterOptions = {};
 	adapterOptions.nextInChain = nullptr;
@@ -62,6 +62,20 @@ int main()
 	WGPUAdapter adapter = requestAdapter(instance, &adapterOptions);
 
 	std::cout << "Got adapter: " << adapter << std::endl;
+	std::cout << "Requesting Device" << std::endl;
+
+	WGPUDeviceDescriptor deviceDesc = {};
+	deviceDesc.nextInChain = nullptr;
+	deviceDesc.label = "Main Graphical Device";
+	deviceDesc.requiredFeaturesCount = 0;
+	deviceDesc.requiredLimits = nullptr;
+	deviceDesc.defaultQueue.nextInChain = nullptr;
+	deviceDesc.defaultQueue.label = "Default Queue";
+
+	WGPUDevice device = requestDevice(adapter, &deviceDesc);
+
+	std::cout << "Got Device: " << device << std::endl;
+	setDeviceErrorCallBack(&device);
 
 	std::vector<WGPUFeatureName> features;
 
@@ -83,8 +97,9 @@ int main()
 
 	// clean up
 	// wGPU
-	wgpuSurfaceRelease(surface);
+	wgpuDeviceRelease(device);
 	wgpuAdapterRelease(adapter);
+	wgpuSurfaceRelease(surface);
 	wgpuInstanceRelease(instance);
 
 	// GLFW

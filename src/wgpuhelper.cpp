@@ -83,4 +83,16 @@ namespace ectoplasme
 		return userData.device;
 
 	};
+
+	void setDeviceErrorCallBack(WGPUDevice* device)
+	{
+		auto onDeviceError = [](WGPUErrorType type, char const* message, void*)
+		{
+			std::cout << "Uncaptured device error : type " << type;
+			if (message) std::cout << " (" << message << ")";
+			std::cout << std::endl;
+		};
+
+		wgpuDeviceSetUncapturedErrorCallback(*device, onDeviceError, nullptr);
+	};
 }
