@@ -1,7 +1,8 @@
 ﻿#include <iostream>
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu.h>
-#include "src/wgpuhelper.h"
+#include "src/wgpucallback.h"
+#include "src/wgpu.h"
 #include <glfw3webgpu.h>
 #include <cassert>
 #include <vector>
@@ -18,7 +19,6 @@ int main()
 	}
 
 	//get the surface for glfw and webgpu 
-
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	// define the window
 	int width = 800;
@@ -33,49 +33,17 @@ int main()
 		return 1;
 	}
 
-	// createing of the wGPU descriptor
-	WGPUInstanceDescriptor descriptor = {};
-	descriptor.nextInChain = nullptr;
+	//we create a instance of the wGPU desc
+	WGPUInstance instance = getWGPUInstance();
 
-	// we create a instance of the wGPU desc
-	WGPUInstance instance = wgpuCreateInstance(&descriptor);
-
-	//safety check to see if the creation of the wGPU instance is sucessfull
-	if(!instance)
-	{
-		std::cout << "Could not instanciate wGPU" << std::endl;
-		return 1;
-	}
-	
-	std::cout << "WGPU instance: " << instance << std::endl;
-
+	//we get the surface from glfw and the webGPU instance
 	WGPUSurface surface = glfwGetWGPUSurface(instance, window);
 
 	//getting the webGPU adapter
-	std::cout << "Requesting adapter"  << std::endl;
+	WGPUAdapter adapter = getAdapter(instance, surface);
 
-	WGPURequestAdapterOptions adapterOptions = {};
-	adapterOptions.nextInChain = nullptr;
-	adapterOptions.compatibleSurface = surface;
-
-
-	WGPUAdapter adapter = requestAdapter(instance, &adapterOptions);
-
-	std::cout << "Got adapter: " << adapter << std::endl;
-	std::cout << "Requesting Device" << std::endl;
-
-	WGPUDeviceDescriptor deviceDesc = {};
-	deviceDesc.nextInChain = nullptr;
-	deviceDesc.label = "Main Graphical Device";
-	deviceDesc.requiredFeaturesCount = 0;
-	deviceDesc.requiredLimits = nullptr;
-	deviceDesc.defaultQueue.nextInChain = nullptr;
-	deviceDesc.defaultQueue.label = "Default Queue";
-
-	WGPUDevice device = requestDevice(adapter, &deviceDesc);
-
-	std::cout << "Got Device: " << device << std::endl;
-	setDeviceErrorCallBack(&device);
+	//getting the webGPU device
+	WGPUDevice device = getDevice(adapter);
 
 	std::vector<WGPUFeatureName> features;
 

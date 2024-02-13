@@ -1,4 +1,4 @@
-#include "wgpuhelper.h"
+#include "wgpucallback.h"
 #include <webgpu/webgpu.h>
 #include <iostream>
 #include <cassert>
