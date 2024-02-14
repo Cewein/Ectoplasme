@@ -3,6 +3,7 @@
 #include <iostream>
 #include <webgpu/webgpu.h>
 #include <cassert>
+#include <vector>
 
 //Function to get a WGPU instance based on the provided descriptor
 WGPUInstance ectoplasme::getWGPUInstance(WGPUInstanceDescriptor descriptor)
@@ -61,5 +62,20 @@ WGPUDevice ectoplasme::getDevice(WGPUAdapter adapter)
 	ectoplasme::setDeviceErrorCallBack(&device);
 
 	return device;
+}
+
+void ectoplasme::enumerateFeature(WGPUAdapter adapter)
+{
+	std::vector<WGPUFeatureName> features;
+
+	size_t featuresCount = wgpuAdapterEnumerateFeatures(adapter, nullptr);
+
+	features.resize(featuresCount);
+	wgpuAdapterEnumerateFeatures(adapter, features.data());
+
+	for (size_t i = 0; i < featuresCount; i++)
+	{
+		std::cout << "\t[" << i << "] " << features[i] << std::endl;
+	}
 }
 

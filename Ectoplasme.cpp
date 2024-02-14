@@ -45,17 +45,46 @@ int main()
 	//getting the webGPU device
 	WGPUDevice device = getDevice(adapter);
 
-	std::vector<WGPUFeatureName> features;
+	//enumerate feature 
+	enumerateFeature(adapter);
 
-	size_t featuresCount = wgpuAdapterEnumerateFeatures(adapter, nullptr);
-
-	features.resize(featuresCount);
-	wgpuAdapterEnumerateFeatures(adapter,features.data());
-
-	for(size_t i = 0; i < featuresCount; i++)
+	//getting the queue
+	//more info : https://eliemichel.github.io/LearnWebGPU/getting-started/the-command-queue.html
+	WGPUQueue queue = wgpuDeviceGetQueue(device);
+	auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void*)
 	{
-		std::cout <<"\t[" << i << "] " << features[i] << std::endl;
-	}
+		//check enum form WGPUQueueWorkDoneStatus to see the enum value
+		std::cout << "Queue work finished with status: " << status << std::endl;
+	};
+
+	wgpuQueueOnSubmittedWorkDone(queue, onQueueWorkDone, nullptr);
+
+	//In webGPU we cannot create Command buffer, there for we need a command encoder
+	WGPUCommandEncoderDescriptor encoderDesc = {};
+
+	encoderDesc.nextInChain = nullptr;
+	encoderDesc.label = "Main command encoder";
+
+	WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+
+	wgpuCommandEncoderInsertDebugMarker(encoder, "Test one");
+	wgpuCommandEncoderInsertDebugMarker(encoder, "Test two");
+
+	//we speciffy the option for the command buffer create by the command encoder
+	WGPUCommandBufferDescriptor cmdBufferDescriptor = {};
+	cmdBufferDescriptor.nextInChain = nullptr;
+	cmdBufferDescriptor.label = "Command buffer";
+
+	//now we encode the command
+	WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdBufferDescriptor);
+
+	//Release the encode
+	wgpuCommandEncoderRelease(encoder);
+
+	//we now submit the command
+	std::cout << "Submitting command" << std::endl;
+	wgpuQueueSubmit(queue, 1, &command);
+	wgpuCommandBufferRelease(command);
 
 	// main loop like in opengl
 	while (!glfwWindowShouldClose(window))
@@ -65,6 +94,8 @@ int main()
 
 	// clean up
 	// wGPU
+	wgpuCommandBufferRelease(command);
+	wgpuQueueRelease(queue);
 	wgpuDeviceRelease(device);
 	wgpuAdapterRelease(adapter);
 	wgpuSurfaceRelease(surface);
