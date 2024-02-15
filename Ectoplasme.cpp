@@ -20,6 +20,7 @@ int main()
 
 	//get the surface for glfw and webgpu 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	// define the window
 	int width = 800;
 	int height = 600;
@@ -51,50 +52,92 @@ int main()
 	//getting the queue
 	//more info : https://eliemichel.github.io/LearnWebGPU/getting-started/the-command-queue.html
 	WGPUQueue queue = wgpuDeviceGetQueue(device);
-	auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void*)
-	{
-		//check enum form WGPUQueueWorkDoneStatus to see the enum value
-		std::cout << "Queue work finished with status: " << status << std::endl;
+
+	auto onDeviceError = [](WGPUErrorType type, char const* message, void* /* pUserData */) {
+		std::cout << "Uncaptured device error: type " << type;
+		if (message) std::cout << " (" << message << ")";
+		std::cout << std::endl;
 	};
+	wgpuDeviceSetUncapturedErrorCallback(device, onDeviceError, nullptr /* pUserData */);
 
-	wgpuQueueOnSubmittedWorkDone(queue, onQueueWorkDone, nullptr);
+	//creating the swapchain
+	WGPUSwapChainDescriptor swapChainDesc = {};
+	swapChainDesc.width = width;
+	swapChainDesc.height = height;
+	swapChainDesc.usage = WGPUTextureUsage_RenderAttachment;
 
-	//In webGPU we cannot create Command buffer, there for we need a command encoder
-	WGPUCommandEncoderDescriptor encoderDesc = {};
+	// The swap chain textures use the color format suggested by the target surface.
+#ifdef WEBGPU_BACKEND_WGPU
+	WGPUTextureFormat swapChainFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
+#else
+	WGPUTextureFormat swapChainFormat = WGPUTextureFormat_BGRA8Unorm;
+#endif
 
-	encoderDesc.nextInChain = nullptr;
-	encoderDesc.label = "Main command encoder";
+	swapChainDesc.format = swapChainFormat;
 
-	WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+	swapChainDesc.presentMode = WGPUPresentMode_Fifo;
 
-	wgpuCommandEncoderInsertDebugMarker(encoder, "Test one");
-	wgpuCommandEncoderInsertDebugMarker(encoder, "Test two");
-
-	//we speciffy the option for the command buffer create by the command encoder
-	WGPUCommandBufferDescriptor cmdBufferDescriptor = {};
-	cmdBufferDescriptor.nextInChain = nullptr;
-	cmdBufferDescriptor.label = "Command buffer";
-
-	//now we encode the command
-	WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdBufferDescriptor);
-
-	//Release the encode
-	wgpuCommandEncoderRelease(encoder);
-
-	//we now submit the command
-	std::cout << "Submitting command" << std::endl;
-	wgpuQueueSubmit(queue, 1, &command);
-	wgpuCommandBufferRelease(command);
+	WGPUSwapChain swapChain = wgpuDeviceCreateSwapChain(device, surface, &swapChainDesc);
+	std::cout << "Swapchain: " << swapChain << std::endl;
 
 	// main loop like in opengl
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
+
+		WGPUTextureView nextTexture = wgpuSwapChainGetCurrentTextureView(swapChain);
+		std::cout << "Next texture: " << nextTexture << std::endl;
+
+		if (!nextTexture)
+		{
+			std::cout << "Cannot acquire next swap chain texture" << std::endl;
+			break;
+		}
+
+		//In webGPU we cannot create Command buffer, there for we need a command encoder
+		WGPUCommandEncoderDescriptor encoderDesc = {};
+
+		encoderDesc.nextInChain = nullptr;
+		encoderDesc.label = "Main command encoder";
+
+		WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+
+		//for rendering we need a RenderPassEncoder
+		WGPURenderPassDescriptor renderPassDesc = {};
+		WGPURenderPassColorAttachment renderPassColorAttachment = {};
+		renderPassColorAttachment.view = nextTexture;
+		renderPassColorAttachment.resolveTarget = nullptr;
+		renderPassColorAttachment.loadOp = WGPULoadOp_Clear;
+		renderPassColorAttachment.storeOp = WGPUStoreOp_Store;
+		renderPassColorAttachment.clearValue = WGPUColor{ 0.6,0.7,0.9,1.0 };
+
+		renderPassDesc.colorAttachmentCount = 1;
+		renderPassDesc.colorAttachments = &renderPassColorAttachment;
+		renderPassDesc.depthStencilAttachment = nullptr;
+		renderPassDesc.timestampWriteCount = 0;
+		renderPassDesc.timestampWrites = nullptr;
+		renderPassDesc.nextInChain = nullptr;
+
+		WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+		wgpuRenderPassEncoderEnd(renderPass);
+		wgpuRenderPassEncoderRelease(renderPass);
+
+		wgpuTextureViewRelease(nextTexture);
+
+		WGPUCommandBufferDescriptor cmdBufferDescriptor = {};
+		cmdBufferDescriptor.nextInChain = nullptr;
+		cmdBufferDescriptor.label = "Command buffer";
+		WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdBufferDescriptor);
+		wgpuCommandEncoderRelease(encoder);
+		wgpuQueueSubmit(queue, 1, &command);
+		wgpuCommandBufferRelease(command);
+
+		wgpuSwapChainPresent(swapChain);
 	}
 
 	// clean up
 	// wGPU
-	wgpuCommandBufferRelease(command);
+	wgpuSwapChainRelease(swapChain);
 	wgpuQueueRelease(queue);
 	wgpuDeviceRelease(device);
 	wgpuAdapterRelease(adapter);
