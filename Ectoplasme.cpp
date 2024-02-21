@@ -35,7 +35,8 @@ int main()
 	}
 
 	//we create a instance of the wGPU desc
-	WGPUInstance instance = getWGPUInstance();
+	WGPUInstanceDescriptor InstanceDesc = {};
+	WGPUInstance instance = getWGPUInstance(InstanceDesc);
 
 	//we get the surface from glfw and the webGPU instance
 	WGPUSurface surface = glfwGetWGPUSurface(instance, window);
@@ -44,41 +45,18 @@ int main()
 	WGPUAdapter adapter = getAdapter(instance, surface);
 
 	//getting the webGPU device
-	WGPUDevice device = getDevice(adapter);
+	WGPUDeviceDescriptor deviceDesc = {};
+	WGPUDevice device = getDevice(adapter, deviceDesc);
 
 	//enumerate feature 
 	enumerateFeature(adapter);
 
 	//getting the queue
 	//more info : https://eliemichel.github.io/LearnWebGPU/getting-started/the-command-queue.html
-	WGPUQueue queue = wgpuDeviceGetQueue(device);
-
-	auto onDeviceError = [](WGPUErrorType type, char const* message, void* /* pUserData */) {
-		std::cout << "Uncaptured device error: type " << type;
-		if (message) std::cout << " (" << message << ")";
-		std::cout << std::endl;
-	};
-	wgpuDeviceSetUncapturedErrorCallback(device, onDeviceError, nullptr /* pUserData */);
+	WGPUQueue queue = getQueueFromDevice(device);
 
 	//creating the swapchain
-	WGPUSwapChainDescriptor swapChainDesc = {};
-	swapChainDesc.width = width;
-	swapChainDesc.height = height;
-	swapChainDesc.usage = WGPUTextureUsage_RenderAttachment;
-
-	// The swap chain textures use the color format suggested by the target surface.
-#ifdef WEBGPU_BACKEND_WGPU
-	WGPUTextureFormat swapChainFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
-#else
-	WGPUTextureFormat swapChainFormat = WGPUTextureFormat_BGRA8Unorm;
-#endif
-
-	swapChainDesc.format = swapChainFormat;
-
-	swapChainDesc.presentMode = WGPUPresentMode_Fifo;
-
-	WGPUSwapChain swapChain = wgpuDeviceCreateSwapChain(device, surface, &swapChainDesc);
-	std::cout << "Swapchain: " << swapChain << std::endl;
+	WGPUSwapChain swapChain = createSwapChain(device, adapter,surface, width, height);
 
 	// main loop like in opengl
 	while (!glfwWindowShouldClose(window))
